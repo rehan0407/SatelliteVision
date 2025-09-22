@@ -15,8 +15,7 @@ const Footer = () => {
     { href: '#home', label: 'Home' },
     { href: '#features', label: 'Features' },
     { href: '#visualization', label: 'Visualization' },
-    { href: '#alerts', label: 'Alerts' },
-    { href: '#team', label: 'Team' }
+    { href: '#alerts', label: 'Alerts' }
   ];
 
   const resources = [
@@ -158,12 +157,12 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* ISRO Hackathon Badge */}
+        {/* ISRO Mission Badge */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center space-x-4 glass-card px-6 py-3">
             <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
             <span className="font-montserrat text-sm font-medium text-muted-foreground">
-              ISRO Hackathon 2024 - Advanced Earth Observation Solutions
+              ISRO Advanced Earth Observation Solutions
             </span>
             <div className="w-3 h-3 bg-accent rounded-full animate-pulse"></div>
           </div>
@@ -173,7 +172,7 @@ const Footer = () => {
         <div className="pt-8 border-t border-border/30">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="font-montserrat text-sm text-muted-foreground">
-              © 2024 SatelliteVision. Built for ISRO Hackathon. All rights reserved.
+              © 2024 SatelliteVision. ISRO Earth Observation Division. All rights reserved.
             </div>
             
             <div className="flex items-center space-x-6">

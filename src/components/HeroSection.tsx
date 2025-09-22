@@ -52,7 +52,7 @@ const HeroSection = () => {
           {/* ISRO Badge */}
           <div className="inline-flex items-center space-x-2 glass-card px-4 py-2 mb-8 text-sm font-montserrat">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <span className="text-muted-foreground">ISRO Hackathon 2024</span>
+            <span className="text-muted-foreground">ISRO Advanced Earth Observation</span>
             <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
           </div>
 
