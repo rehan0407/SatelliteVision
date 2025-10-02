@@ -3,47 +3,44 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Upload, 
+  MapPin, 
   Image, 
   Layers, 
-  BarChart3, 
-  Download, 
-  Play, 
-  Pause,
-  ZoomIn,
-  Filter
+  Activity
 } from 'lucide-react';
+import MapAOISelector from './MapAOISelector';
+import ImageComparison from './ImageComparison';
+import ChangeDetectionOverlay from './ChangeDetectionOverlay';
 
 const VisualizationSection = () => {
-  const [activeTab, setActiveTab] = useState('upload');
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [activeTab, setActiveTab] = useState('aoi');
+  const [selectedAOI, setSelectedAOI] = useState(false);
 
   const visualizationFeatures = [
     {
-      id: 'upload',
-      title: 'Image Upload & Selection',
-      icon: Upload,
-      description: 'Upload satellite imagery or select from our extensive database'
+      id: 'aoi',
+      title: 'AOI Selection',
+      icon: MapPin,
+      description: 'Select Area of Interest on the map for analysis'
     },
     {
-      id: 'comparison',
-      title: 'Before & After Comparison',
+      id: 'imagery',
+      title: 'LISS-IV Images',
       icon: Layers,
-      description: 'Interactive slider for temporal change visualization'
+      description: 'Display before/after satellite imagery comparison'
     },
     {
-      id: 'analysis',
-      title: 'Change Detection Results',
-      icon: BarChart3,
-      description: 'Heatmaps and highlighted areas showing detected changes'
-    },
-    {
-      id: 'export',
-      title: 'Data Export & Reports',
-      icon: Download,
-      description: 'Generate detailed reports and export analysis results'
+      id: 'detection',
+      title: 'Change Detection',
+      icon: Activity,
+      description: 'Heatmap overlay showing detected changes'
     }
   ];
+
+  const handleAOISelected = (bounds: any) => {
+    setSelectedAOI(true);
+    console.log('AOI Selected:', bounds);
+  };
 
   return (
     <section id="visualization" className="py-24 space-bg">
@@ -64,8 +61,7 @@ const VisualizationSection = () => {
           </h2>
           
           <p className="font-montserrat text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Advanced visualization tools for comprehensive satellite imagery analysis 
-            and change detection results presentation.
+            Interactive workflow: Select AOI → Load LISS-IV imagery → Analyze changes → View results
           </p>
         </div>
 
@@ -100,119 +96,37 @@ const VisualizationSection = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="font-orbitron font-semibold text-xl text-foreground mb-2">
-                      Satellite Imagery Analysis
+                      {visualizationFeatures.find(f => f.id === activeTab)?.title}
                     </CardTitle>
                     <CardDescription className="font-montserrat text-muted-foreground">
                       {visualizationFeatures.find(f => f.id === activeTab)?.description}
                     </CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge variant="secondary" className="glass-card font-montserrat text-xs">
-                      Live Demo
-                    </Badge>
+                    {selectedAOI && activeTab !== 'aoi' && (
+                      <Badge variant="secondary" className="glass-card font-montserrat text-xs bg-success/20 text-success">
+                        AOI Selected
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardHeader>
               
               <CardContent>
-                {/* Demo Visualization Area */}
-                <div className="aspect-video bg-gradient-to-br from-muted/20 to-muted/5 rounded-lg border border-border/30 flex items-center justify-center relative overflow-hidden">
-                  {/* Simulated satellite imagery background */}
-                  <div className="absolute inset-0 opacity-30">
-                    <div className="w-full h-full bg-gradient-to-br from-primary/20 via-accent/10 to-success/20"></div>
-                    <div className="absolute inset-0" style={{
-                      backgroundImage: `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-                                       radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.1) 0%, transparent 50%)`
-                    }}></div>
+                {/* Content based on active tab */}
+                {activeTab === 'aoi' && (
+                  <div className="h-[500px] rounded-lg overflow-hidden">
+                    <MapAOISelector onAOISelected={handleAOISelected} />
                   </div>
-                  
-                  {/* Content based on active tab */}
-                  <div className="relative z-10 text-center">
-                    {activeTab === 'upload' && (
-                      <div className="space-y-4">
-                        <Upload className="w-16 h-16 text-primary mx-auto opacity-60" />
-                        <p className="font-montserrat text-muted-foreground">
-                          Upload satellite imagery or select from database
-                        </p>
-                        <Button variant="outline" className="glass-card border-primary/30">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Select Images
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {activeTab === 'comparison' && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-center space-x-4">
-                          <div className="w-24 h-16 bg-gradient-to-br from-blue-500/30 to-blue-600/30 rounded border border-blue-400/30 flex items-center justify-center">
-                            <span className="font-montserrat text-xs text-blue-300">Before</span>
-                          </div>
-                          <Layers className="w-8 h-8 text-accent" />
-                          <div className="w-24 h-16 bg-gradient-to-br from-red-500/30 to-red-600/30 rounded border border-red-400/30 flex items-center justify-center">
-                            <span className="font-montserrat text-xs text-red-300">After</span>
-                          </div>
-                        </div>
-                        <p className="font-montserrat text-muted-foreground">
-                          Interactive comparison slider for temporal analysis
-                        </p>
-                      </div>
-                    )}
-                    
-                    {activeTab === 'analysis' && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="h-16 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded border border-green-400/30 flex items-center justify-center">
-                            <span className="font-montserrat text-xs text-green-300">No Change: 85%</span>
-                          </div>
-                          <div className="h-16 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded border border-red-400/30 flex items-center justify-center">
-                            <span className="font-montserrat text-xs text-red-300">Change: 15%</span>
-                          </div>
-                        </div>
-                        <p className="font-montserrat text-muted-foreground">
-                          AI-powered change detection with confidence scores
-                        </p>
-                      </div>
-                    )}
-                    
-                    {activeTab === 'export' && (
-                      <div className="space-y-4">
-                        <Download className="w-16 h-16 text-success mx-auto opacity-60" />
-                        <p className="font-montserrat text-muted-foreground">
-                          Generate comprehensive analysis reports
-                        </p>
-                        <div className="flex justify-center space-x-2">
-                          <Button variant="outline" size="sm" className="glass-card">PDF</Button>
-                          <Button variant="outline" size="sm" className="glass-card">CSV</Button>
-                          <Button variant="outline" size="sm" className="glass-card">GeoJSON</Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                )}
                 
-                {/* Controls */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="glass-card"
-                      onClick={() => setIsPlaying(!isPlaying)}
-                    >
-                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    </Button>
-                    <Button variant="outline" size="sm" className="glass-card">
-                      <ZoomIn className="w-4 h-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" className="glass-card">
-                      <Filter className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="text-sm font-montserrat text-muted-foreground">
-                    Resolution: 10m | Date: 2024-01-15
-                  </div>
-                </div>
+                {activeTab === 'imagery' && (
+                  <ImageComparison />
+                )}
+                
+                {activeTab === 'detection' && (
+                  <ChangeDetectionOverlay />
+                )}
               </CardContent>
             </Card>
           </div>
