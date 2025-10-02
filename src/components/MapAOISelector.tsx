@@ -87,9 +87,6 @@ const MapAOISelector: React.FC<MapAOISelectorProps> = ({ onAOISelected }) => {
         zoomControl={true}
         scrollWheelZoom={true}
       >
-        {/* @ts-expect-error react-leaflet context expects a render function child in this build */}
-        {(_ctx: any) => (
-          <>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -112,8 +109,6 @@ const MapAOISelector: React.FC<MapAOISelectorProps> = ({ onAOISelected }) => {
                 }}
               />
             )}
-          </>
-        )}
       </MapContainer>
 
       {/* Gradient overlay to blend with theme */}
