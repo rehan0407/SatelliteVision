@@ -12,9 +12,17 @@ import MapAOISelector from './MapAOISelector';
 import ImageComparison from './ImageComparison';
 import ChangeDetectionOverlay from './ChangeDetectionOverlay';
 
+interface AOIBounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}
+
 const VisualizationSection = () => {
   const [activeTab, setActiveTab] = useState('aoi');
-  const [selectedAOI, setSelectedAOI] = useState(false);
+  const [selectedAOI, setSelectedAOI] = useState<AOIBounds | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const visualizationFeatures = [
     {
@@ -37,9 +45,20 @@ const VisualizationSection = () => {
     }
   ];
 
-  const handleAOISelected = (bounds: any) => {
-    setSelectedAOI(true);
-    console.log('AOI Selected:', bounds);
+  const handleAOISelected = (bounds: AOIBounds | null) => {
+    if (bounds) {
+      setIsLoading(true);
+      setSelectedAOI(bounds);
+      console.log('AOI Selected:', bounds);
+      
+      // Simulate data fetching (replace with actual backend call later)
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+    } else {
+      setSelectedAOI(null);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -103,7 +122,12 @@ const VisualizationSection = () => {
                     </CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {selectedAOI && activeTab !== 'aoi' && (
+                    {isLoading && activeTab !== 'aoi' && (
+                      <Badge variant="secondary" className="glass-card font-montserrat text-xs bg-primary/20 text-primary">
+                        Loading...
+                      </Badge>
+                    )}
+                    {selectedAOI && !isLoading && activeTab !== 'aoi' && (
                       <Badge variant="secondary" className="glass-card font-montserrat text-xs bg-success/20 text-success">
                         AOI Selected
                       </Badge>
@@ -121,11 +145,11 @@ const VisualizationSection = () => {
                 )}
                 
                 {activeTab === 'imagery' && (
-                  <ImageComparison />
+                  <ImageComparison selectedAOI={selectedAOI} isLoading={isLoading} />
                 )}
                 
                 {activeTab === 'detection' && (
-                  <ChangeDetectionOverlay />
+                  <ChangeDetectionOverlay selectedAOI={selectedAOI} isLoading={isLoading} />
                 )}
               </CardContent>
             </Card>

@@ -2,26 +2,67 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Download, Maximize2 } from 'lucide-react';
+import { Calendar, Download, Maximize2, Loader2, MapPin } from 'lucide-react';
+
+interface AOIBounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}
 
 interface ImageComparisonProps {
   beforeImage?: string;
   afterImage?: string;
   beforeDate?: string;
   afterDate?: string;
+  selectedAOI?: AOIBounds | null;
+  isLoading?: boolean;
 }
 
 const ImageComparison = ({ 
   beforeImage, 
   afterImage,
   beforeDate = '2023-06-15',
-  afterDate = '2024-01-15'
+  afterDate = '2024-01-15',
+  selectedAOI,
+  isLoading = false
 }: ImageComparisonProps) => {
   const [sliderPosition, setSliderPosition] = useState(50);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSliderPosition(Number(e.target.value));
   };
+
+  // Show message if no AOI selected
+  if (!selectedAOI && !isLoading) {
+    return (
+      <div className="aspect-video bg-muted/20 rounded-lg border border-border/30 flex flex-col items-center justify-center space-y-4">
+        <MapPin className="w-16 h-16 text-muted-foreground/50" />
+        <div className="text-center space-y-2">
+          <p className="font-montserrat text-lg font-medium text-foreground">No AOI Selected</p>
+          <p className="font-montserrat text-sm text-muted-foreground max-w-md">
+            Please select an Area of Interest from the AOI Selection tab to view satellite imagery comparison
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="aspect-video bg-muted/20 rounded-lg border border-border/30 flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-16 h-16 text-primary animate-spin" />
+        <div className="text-center space-y-2">
+          <p className="font-montserrat text-lg font-medium text-foreground">Loading Satellite Imagery</p>
+          <p className="font-montserrat text-sm text-muted-foreground">
+            Fetching LISS-IV images for selected area...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

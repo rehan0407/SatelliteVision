@@ -1,18 +1,61 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Activity, TrendingUp, AlertTriangle, Download, Eye } from 'lucide-react';
+import { Activity, TrendingUp, AlertTriangle, Download, Eye, Loader2, MapPin } from 'lucide-react';
+
+interface AOIBounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}
 
 interface ChangeDetectionOverlayProps {
   showHeatmap?: boolean;
+  selectedAOI?: AOIBounds | null;
+  isLoading?: boolean;
 }
 
-const ChangeDetectionOverlay = ({ showHeatmap = true }: ChangeDetectionOverlayProps) => {
+const ChangeDetectionOverlay = ({ 
+  showHeatmap = true, 
+  selectedAOI,
+  isLoading = false 
+}: ChangeDetectionOverlayProps) => {
   const changeCategories = [
     { name: 'Deforestation', color: 'bg-red-500', area: 156, percentage: 36.5, severity: 'high' },
     { name: 'Urban Growth', color: 'bg-yellow-500', area: 182, percentage: 42.6, severity: 'medium' },
     { name: 'Water Bodies', color: 'bg-blue-500', area: 89, percentage: 20.9, severity: 'low' },
   ];
+
+  // Show message if no AOI selected
+  if (!selectedAOI && !isLoading) {
+    return (
+      <div className="aspect-video bg-muted/20 rounded-lg border border-border/30 flex flex-col items-center justify-center space-y-4">
+        <MapPin className="w-16 h-16 text-muted-foreground/50" />
+        <div className="text-center space-y-2">
+          <p className="font-montserrat text-lg font-medium text-foreground">No AOI Selected</p>
+          <p className="font-montserrat text-sm text-muted-foreground max-w-md">
+            Please select an Area of Interest from the AOI Selection tab to view change detection analysis
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="aspect-video bg-muted/20 rounded-lg border border-border/30 flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-16 h-16 text-primary animate-spin" />
+        <div className="text-center space-y-2">
+          <p className="font-montserrat text-lg font-medium text-foreground">Processing Change Detection</p>
+          <p className="font-montserrat text-sm text-muted-foreground">
+            Analyzing satellite imagery for the selected area...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
