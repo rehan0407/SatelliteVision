@@ -87,6 +87,9 @@ const MapAOISelector: React.FC<MapAOISelectorProps> = ({ onAOISelected }) => {
         zoomControl={true}
         scrollWheelZoom={true}
       >
+        {/* @ts-expect-error For this build, MapContainer expects a function-as-child to access context */}
+        {(ctx: any) => (
+          <>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -109,6 +112,8 @@ const MapAOISelector: React.FC<MapAOISelectorProps> = ({ onAOISelected }) => {
                 }}
               />
             )}
+          </>
+        )}
       </MapContainer>
 
       {/* Gradient overlay to blend with theme */}
