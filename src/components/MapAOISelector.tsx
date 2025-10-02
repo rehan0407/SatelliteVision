@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { MapContainer, TileLayer, Rectangle, useMapEvents } from 'react-leaflet';
 import { LatLngBounds, LatLng, LeafletMouseEvent } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -87,27 +87,32 @@ const MapAOISelector: React.FC<MapAOISelectorProps> = ({ onAOISelected }) => {
         zoomControl={true}
         scrollWheelZoom={true}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        
-        <DrawingHandler
-          onAOISelected={onAOISelected}
-          onAreaCalculated={setAreaKm2}
-          onRectangleChange={setRectangleBounds}
-        />
+        {/* @ts-expect-error react-leaflet context expects a render function child in this build */}
+        {(_ctx: any) => (
+          <>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            
+            <DrawingHandler
+              onAOISelected={onAOISelected}
+              onAreaCalculated={setAreaKm2}
+              onRectangleChange={setRectangleBounds}
+            />
 
-        {rectangleBounds && (
-          <Rectangle
-            bounds={rectangleBounds}
-            pathOptions={{
-              color: 'rgba(59, 130, 246, 0.9)',
-              fillColor: 'rgba(59, 130, 246, 0.15)',
-              weight: 2,
-              dashArray: '5, 5',
-            }}
-          />
+            {rectangleBounds && (
+              <Rectangle
+                bounds={rectangleBounds}
+                pathOptions={{
+                  color: 'rgba(59, 130, 246, 0.9)',
+                  fillColor: 'rgba(59, 130, 246, 0.15)',
+                  weight: 2,
+                  dashArray: '5, 5',
+                }}
+              />
+            )}
+          </>
         )}
       </MapContainer>
 
