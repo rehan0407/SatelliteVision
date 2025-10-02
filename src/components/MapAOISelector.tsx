@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Rectangle, useMapEvents } from 'react-leaflet';
-import { LatLngBounds, LatLng, LeafletMouseEvent } from 'leaflet';
+import React, { useEffect, useRef, useState } from 'react';
+import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Square } from 'lucide-react';
@@ -12,57 +11,89 @@ interface MapAOISelectorProps {
 const DEFAULT_CENTER: [number, number] = [20.5937, 78.9629]; // India [lat, lng]
 const DEFAULT_ZOOM = 5;
 
-interface DrawingHandlerProps {
-  onAOISelected?: (bounds: { west: number; south: number; east: number; north: number }) => void;
-  onAreaCalculated: (area: number) => void;
-  onRectangleChange: (bounds: LatLngBounds | null) => void;
-}
 
-const DrawingHandler: React.FC<DrawingHandlerProps> = ({ onAOISelected, onAreaCalculated, onRectangleChange }) => {
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startPoint, setStartPoint] = useState<LatLng | null>(null);
-
-  const map = useMapEvents({
-    mousedown: (e: LeafletMouseEvent) => {
-      setIsDrawing(true);
-      setStartPoint(e.latlng);
-      onRectangleChange(null);
-    },
-    mousemove: (e: LeafletMouseEvent) => {
-      if (isDrawing && startPoint) {
-        const bounds = new LatLngBounds(startPoint, e.latlng);
-        onRectangleChange(bounds);
-      }
-    },
-    mouseup: (e: LeafletMouseEvent) => {
-      if (isDrawing && startPoint) {
-        setIsDrawing(false);
-        const bounds = new LatLngBounds(startPoint, e.latlng);
-        onRectangleChange(bounds);
-
-        const west = Math.min(startPoint.lng, e.latlng.lng);
-        const east = Math.max(startPoint.lng, e.latlng.lng);
-        const south = Math.min(startPoint.lat, e.latlng.lat);
-        const north = Math.max(startPoint.lat, e.latlng.lat);
-
-        // Calculate area in km²
-        const latMid = (south + north) / 2;
-        const dLatKm = Math.abs(north - south) * 111;
-        const dLngKm = Math.abs(east - west) * 111 * Math.cos((latMid * Math.PI) / 180);
-        const area = Number((dLatKm * dLngKm).toFixed(2));
-        
-        onAreaCalculated(area);
-        onAOISelected?.({ west, south, east, north });
-      }
-    },
-  });
-
-  return null;
-};
 
 const MapAOISelector: React.FC<MapAOISelectorProps> = ({ onAOISelected }) => {
-  const [rectangleBounds, setRectangleBounds] = useState<LatLngBounds | null>(null);
   const [areaKm2, setAreaKm2] = useState<number | null>(null);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const rectLayerRef = useRef<L.Rectangle | null>(null);
+  const startPointRef = useRef<L.LatLng | null>(null);
+  const isDrawingRef = useRef(false);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = L.map(containerRef.current, {
+      center: L.latLng(DEFAULT_CENTER[0], DEFAULT_CENTER[1]),
+      zoom: DEFAULT_ZOOM,
+      zoomControl: true,
+      scrollWheelZoom: true,
+    });
+    mapRef.current = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+
+    const onMouseDown = (e: L.LeafletMouseEvent) => {
+      isDrawingRef.current = true;
+      startPointRef.current = e.latlng;
+      if (rectLayerRef.current) {
+        map.removeLayer(rectLayerRef.current);
+        rectLayerRef.current = null;
+      }
+    };
+
+    const onMouseMove = (e: L.LeafletMouseEvent) => {
+      if (!isDrawingRef.current || !startPointRef.current) return;
+      const bounds = L.latLngBounds(startPointRef.current, e.latlng);
+      if (rectLayerRef.current) {
+        rectLayerRef.current.setBounds(bounds);
+      } else {
+        rectLayerRef.current = L.rectangle(bounds, {
+          color: 'rgba(59, 130, 246, 0.9)',
+          weight: 2,
+          fillColor: 'rgba(59, 130, 246, 0.15)',
+          dashArray: '5, 5',
+        }).addTo(map);
+      }
+    };
+
+    const onMouseUp = (e: L.LeafletMouseEvent) => {
+      if (!isDrawingRef.current || !startPointRef.current) return;
+      isDrawingRef.current = false;
+      const start = startPointRef.current;
+      const west = Math.min(start.lng, e.latlng.lng);
+      const east = Math.max(start.lng, e.latlng.lng);
+      const south = Math.min(start.lat, e.latlng.lat);
+      const north = Math.max(start.lat, e.latlng.lat);
+
+      const latMid = (south + north) / 2;
+      const dLatKm = Math.abs(north - south) * 111;
+      const dLngKm = Math.abs(east - west) * 111 * Math.cos((latMid * Math.PI) / 180);
+      const area = Number((dLatKm * dLngKm).toFixed(2));
+      setAreaKm2(area);
+      onAOISelected?.({ west, south, east, north });
+    };
+
+    map.on('mousedown', onMouseDown);
+    map.on('mousemove', onMouseMove);
+    map.on('mouseup', onMouseUp);
+
+    return () => {
+      map.off('mousedown', onMouseDown);
+      map.off('mousemove', onMouseMove);
+      map.off('mouseup', onMouseUp);
+      if (rectLayerRef.current) {
+        map.removeLayer(rectLayerRef.current);
+        rectLayerRef.current = null;
+      }
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [onAOISelected]);
 
   return (
     <div className="relative w-full h-full">
@@ -80,41 +111,10 @@ const MapAOISelector: React.FC<MapAOISelectorProps> = ({ onAOISelected }) => {
         )}
       </div>
 
-      <MapContainer
-        center={DEFAULT_CENTER}
-        zoom={DEFAULT_ZOOM}
+      <div
+        ref={containerRef}
         className="absolute inset-0 rounded-lg shadow-lg z-0"
-        zoomControl={true}
-        scrollWheelZoom={true}
-      >
-        {/* @ts-expect-error For this build, MapContainer expects a function-as-child to access context */}
-        {(ctx: any) => (
-          <>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            <DrawingHandler
-              onAOISelected={onAOISelected}
-              onAreaCalculated={setAreaKm2}
-              onRectangleChange={setRectangleBounds}
-            />
-
-            {rectangleBounds && (
-              <Rectangle
-                bounds={rectangleBounds}
-                pathOptions={{
-                  color: 'rgba(59, 130, 246, 0.9)',
-                  fillColor: 'rgba(59, 130, 246, 0.15)',
-                  weight: 2,
-                  dashArray: '5, 5',
-                }}
-              />
-            )}
-          </>
-        )}
-      </MapContainer>
+      />
 
       {/* Gradient overlay to blend with theme */}
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent to-background/10 rounded-lg z-[1000]" />
