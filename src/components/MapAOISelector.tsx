@@ -1,33 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, FeatureGroup, useMap } from 'react-leaflet';
-import { EditControl } from 'react-leaflet-draw';
+import { MapContainer, TileLayer, Rectangle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet-draw/dist/leaflet.draw.css';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Square } from 'lucide-react';
-
-// Fix leaflet icon issue
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MapAOISelectorProps {
   onAOISelected?: (bounds: any) => void;
 }
 
-const MapAOISelector = ({ onAOISelected }: MapAOISelectorProps) => {
-  const [selectedArea, setSelectedArea] = useState<number | null>(null);
-  const [aoiCoordinates, setAOICoordinates] = useState<any>(null);
+// Component to handle drawing on the map
+const DrawControl = ({ onAOISelected, setSelectedArea }: any) => {
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<L.LatLng | null>(null);
+  const [endPoint, setEndPoint] = useState<L.LatLng | null>(null);
+  const [rectangle, setRectangle] = useState<L.LatLngBounds | null>(null);
 
   const calculateArea = (bounds: L.LatLngBounds) => {
     const northEast = bounds.getNorthEast();
@@ -41,33 +28,57 @@ const MapAOISelector = ({ onAOISelected }: MapAOISelectorProps) => {
     return area.toFixed(2);
   };
 
-  const handleCreated = (e: any) => {
-    const layer = e.layer;
-    const bounds = layer.getBounds();
-    const area = calculateArea(bounds);
-    
-    setSelectedArea(parseFloat(area));
-    setAOICoordinates(bounds);
-    
-    if (onAOISelected) {
-      onAOISelected(bounds);
+  useMapEvents({
+    click(e) {
+      if (!isDrawing) {
+        // Start drawing
+        setIsDrawing(true);
+        setStartPoint(e.latlng);
+        setEndPoint(e.latlng);
+      } else {
+        // Finish drawing
+        setIsDrawing(false);
+        if (startPoint && endPoint) {
+          const bounds = L.latLngBounds(startPoint, endPoint);
+          setRectangle(bounds);
+          const area = calculateArea(bounds);
+          setSelectedArea(parseFloat(area));
+          if (onAOISelected) {
+            onAOISelected(bounds);
+          }
+        }
+      }
+    },
+    mousemove(e) {
+      if (isDrawing && startPoint) {
+        setEndPoint(e.latlng);
+      }
     }
-  };
+  });
 
-  const handleEdited = (e: any) => {
-    const layers = e.layers;
-    layers.eachLayer((layer: any) => {
-      const bounds = layer.getBounds();
-      const area = calculateArea(bounds);
-      setSelectedArea(parseFloat(area));
-      setAOICoordinates(bounds);
-    });
-  };
+  if (rectangle) {
+    return (
+      <Rectangle
+        bounds={rectangle}
+        pathOptions={{ color: '#3b82f6', weight: 2, fillOpacity: 0.2 }}
+      />
+    );
+  }
 
-  const handleDeleted = () => {
-    setSelectedArea(null);
-    setAOICoordinates(null);
-  };
+  if (isDrawing && startPoint && endPoint) {
+    return (
+      <Rectangle
+        bounds={L.latLngBounds(startPoint, endPoint)}
+        pathOptions={{ color: '#3b82f6', weight: 2, fillOpacity: 0.1, dashArray: '5, 5' }}
+      />
+    );
+  }
+
+  return null;
+};
+
+const MapAOISelector = ({ onAOISelected }: MapAOISelectorProps) => {
+  const [selectedArea, setSelectedArea] = useState<number | null>(null);
 
   return (
     <div className="relative w-full h-full">
@@ -95,34 +106,7 @@ const MapAOISelector = ({ onAOISelected }: MapAOISelectorProps) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FeatureGroup>
-          <EditControl
-            position="topright"
-            onCreated={handleCreated}
-            onEdited={handleEdited}
-            onDeleted={handleDeleted}
-            draw={{
-              rectangle: {
-                shapeOptions: {
-                  color: '#3b82f6',
-                  weight: 2,
-                  fillOpacity: 0.2
-                }
-              },
-              polygon: {
-                shapeOptions: {
-                  color: '#3b82f6',
-                  weight: 2,
-                  fillOpacity: 0.2
-                }
-              },
-              circle: false,
-              circlemarker: false,
-              marker: false,
-              polyline: false
-            }}
-          />
-        </FeatureGroup>
+        <DrawControl onAOISelected={onAOISelected} setSelectedArea={setSelectedArea} />
       </MapContainer>
     </div>
   );
